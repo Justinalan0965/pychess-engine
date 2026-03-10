@@ -21,7 +21,7 @@ Install dependencies with pip:
 pip install -r requirements.txt
 ```
 
-Or with uv:
+Or with [uv](https://docs.astral.sh/uv/getting-started/installation/):
 ```
 uv pip install -r requirements.txt
 ```
