@@ -4,6 +4,7 @@ from rich import print
 class Chess:
     def __init__(self):
         self.board = []
+        self.last_check_point = None
         self.isWhiteMove = True
         self.position_map = {
             'a': 0, 
@@ -62,16 +63,24 @@ class Chess:
         row_from = int(crnt_pos[1]) - 1
         col_from = self.position_map[crnt_pos[0]]
         piece = self.board[row_from][col_from]
-        key = next((k for k, v in self.chess_pieces.items() if v == piece), None)
+        key = self.get_piece_key(piece)
+
+        self.last_check_point = [row[:] for row in self.board]
         
         if (self.isWhiteMove and key.isupper()) or (not self.isWhiteMove and key.islower()):
             if self.rules.is_valid_move(crnt_pos, new_pos, key) and not self.rules.is_piece_in_path(crnt_pos, new_pos):
                 row_to = int(new_pos[1]) - 1
                 col_to = self.position_map[new_pos[0]]
                 self.board[row_to][col_to] = piece
-                self.board[row_from][col_from] = ' '
-                self.isWhiteMove = not self.isWhiteMove
-                self.move_history["white" if not self.isWhiteMove else "black"].append((crnt_pos, new_pos))
+                self.board[row_from][col_from] = self.chess_pieces['.']
+
+                if self.rules.is_king_in_check(self.isWhiteMove):
+                    print("[red]KING IN CHECK. Try to save your King!")
+                    # Roll Back to previous position
+                    self.board = self.last_check_point
+                else:                
+                    self.isWhiteMove = not self.isWhiteMove
+                    self.move_history["white" if not self.isWhiteMove else "black"].append((crnt_pos, new_pos))
             else:
                 print("[red]Invalid move. Pls enter correct new position.")
         else:
@@ -102,7 +111,37 @@ class Chess:
             print("[blue]" + letter.ljust(largest_piece_length), end=" ")
         print()
 
+    
+    def get_position_in_alpbt(self, num):
+        return next((k for k, v in self.position_map.items() if v == num), None)
+
+    def get_piece_key(self, piece):
+        return next((k for k, v in self.chess_pieces.items() if v == piece), None)
+    
+    def are_same_color(self, pos1, pos2):
+        row1, col1 = pos1
+        row2, col2 = pos2
+
+        key1 = self.get_piece_key(self.board[row1][col1])
+        key2 = self.get_piece_key(self.board[row2][col2])
+
+        if key1 is None or key2 is None:
+            return False
+        return key1.isupper() == key2.isupper()
+
+    def get_crnt_pos(self, piece, color):
+        color = color.lower()
+        if color == "white" or color == "w":
+            piece = piece.upper()
         
+        piece_symbol = self.chess_pieces.get(piece)
+        for i in range(len(self.board)):
+            row = self.board[i]
+            for j in range(len(row)):
+                square = row[j]
+                if square == piece_symbol:
+                    return (i, j)
+
 if __name__ == "__main__":
     chess = Chess()
     chess.create_board()
