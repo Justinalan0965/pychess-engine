@@ -1,0 +1,7 @@
+1. Implement rules for each piece
+2. Detect the possible paths for each piece
+3. When piece is blocked and player tries to go ahead, warn the player
+4. End the game when checkmate detected and announce the winner and add/reduce points
+5. Add timer
+6. Add special moves like pawn promotion, En Passant
+7. Design an native app for it
