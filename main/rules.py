@@ -8,7 +8,7 @@ class Rules:
         self.finder = finder.Finder(self.chess)
 
     def is_valid_move(self, piece, new_pos):        
-        if piece == '.':
+        if piece.get_symbol() == '•' or piece is None:
             return False
         piece_type = piece.name.upper()
         if piece_type == 'PAWN':
