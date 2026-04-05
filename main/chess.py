@@ -27,7 +27,7 @@ class Chess:
         for i in range(8):
             row = []
             for j in range(8):
-                row.append(self.helper.create_and_get_piece())
+                row.append(self.helper.EmptySquare())
             self.board.append(row)
         return self.board
 
@@ -83,7 +83,7 @@ class Chess:
             row_to, col_to = self.helper.convert_algebraic_to_indices(new_pos)
 
             # Update captured pieces if there's a piece at the destination
-            if self.board[row_to][col_to].symbol != "•":
+            if not self.board[row_to][col_to].is_empty():
                 captured_piece = self.board[row_to][col_to]
                 if captured_piece.isWhite:
                     self.black_captured_pieces.append(captured_piece)
@@ -98,8 +98,27 @@ class Chess:
             self.board[row_to][col_to] = piece
 
             # Empty piece
-            self.board[row_from][col_from] = self.helper.create_and_get_piece()
+            self.board[row_from][col_from] = self.helper.EmptySquare()
 
+
+            # Check for check or checkmate
+            if (self.rules.is_checkmate(not self.isWhiteMove)):
+                print(f"[red]Checkmate! [blue]{'White' if self.isWhiteMove else 'Black'}[red] wins!")
+                exit()
+            
+            elif (self.rules.is_king_in_check(self.isWhiteMove)):
+                print(f"[yellow]You can't make that move! [blue]{'White' if self.isWhiteMove else 'Black'}[yellow] king is in check!")
+                # Undo the move
+                self.board = [row[:] for row in self.last_check_point]
+                if not self.isWhiteMove:
+                    self.white_captured_pieces.pop() if self.white_captured_pieces else None
+                else:
+                    self.black_captured_pieces.pop() if self.black_captured_pieces else None    
+                return
+            
+            elif self.rules.is_king_in_check(not self.isWhiteMove):
+                print(f"[yellow]Check! [blue]{'Black' if self.isWhiteMove else 'White'}[yellow] king is in check!") 
+            
             # Toggle turn
             self.isWhiteMove = not self.isWhiteMove
 
@@ -109,15 +128,14 @@ class Chess:
             self.move_history["white" if not self.isWhiteMove else "black"].append((FROM, TO))
 
         else:
-            print(
-                f"[red]Invalid move. It's [blue]{'White' if self.isWhiteMove else 'Black'}[red]'s turn.")
+            print(f"[red]Invalid move. It's [blue]{'White' if self.isWhiteMove else 'Black'}[red]'s turn.")
 
     def render_board(self):
         num_pos = [str(i+1) for i in range(8)]
         alpbt_pos = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
         # Determine max symbol width
-        largest_piece_length = max(len(piece.symbol) for row in self.board for piece in row)
+        largest_piece_length = max(len(piece.symbol) if not piece.is_empty() else 0 for row in self.board for piece in row)
 
         # Make cells bigger (minimum width)
         cell_width = max(5, largest_piece_length + 2)
@@ -147,7 +165,7 @@ class Chess:
 
             for j in range(8):
                 piece = board_to_display[i][j]
-                symbol = piece.symbol if piece.symbol != "•" else " "
+                symbol = piece.symbol if not piece.is_empty() else " "
                 print(symbol.center(cell_width), end="|")
 
             print()
@@ -176,7 +194,7 @@ class Chess:
     def is_same_color(self, pos1, pos2):
         piece1 = self.board[pos1[0]][pos1[1]]
         piece2 = self.board[pos2[0]][pos2[1]]
-        if str(piece1) == "•" or str(piece2) == "•":
+        if piece1.is_empty() or piece2.is_empty():
             return False
         return piece1.isWhite == piece2.isWhite
 
@@ -193,10 +211,14 @@ if __name__ == "__main__":
     try:
         while True:
             print("[green]Select a piece (e.g., e2): ", end="")
-            selected_piece = input()
+            selected_piece = input().strip().lower()
+
+            valid_input = chess.helper.validate_algebraic_notation(selected_piece)
+            if not valid_input:
+                print("[red]Invalid input. Please enter a valid position in algebraic notation (e.g., e2).")
+                continue
 
             crnt_pos = chess.helper.convert_algebraic_to_indices(selected_piece)
-            # print(f"[green]You selected: [blue]{selected_piece} and its current position is: {crnt_pos}")
 
             piece = chess.board[crnt_pos[0]][crnt_pos[1]]
             available_moves = chess.finder.get_available_moves(piece)
@@ -209,7 +231,7 @@ if __name__ == "__main__":
             print(f"[blue] {[chess.helper.get_algebraic_pos(move[0], move[1]) for move in available_moves]}")
 
             print("[green]Select a move: ", end="")
-            move_to = input()
+            move_to = input().strip().lower()
 
             selected_pos = chess.helper.convert_algebraic_to_indices(move_to)
             if selected_pos not in available_moves:

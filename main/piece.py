@@ -25,12 +25,15 @@ class Piece:
         
     def get_symbol(self):
         if self.name is None:
-            return "•"
-
+            return None
+        
         if self.isWhite:
             return self.Symbols.white[self.name]
         else:
             return self.Symbols.black[self.name]
+        
+    def is_empty(self):
+        return self.name is None
 
     def __str__(self):
         return self.symbol
